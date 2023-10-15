@@ -339,7 +339,6 @@ if AS:IsAddonLODorEnabled("Skada") then
 
 	local function EmbedWindow(window, width, height, point, relativeFrame, relativePoint, ofsx, ofsy)
 		if not window then return end
-		local barmod = Skada.displays["bar"]
 
 		window.db.barwidth = width
 
@@ -350,7 +349,8 @@ if AS:IsAddonLODorEnabled("Skada") then
 		window.bargroup:SetParent(relativeFrame)
 		window.bargroup:SetFrameStrata("LOW")
 
-		if Skada.revisited then
+		local bgrame = window.bargroup.bgframe
+		if Skada.revisited and not bgrame then
 			local offsety = window.db.reversegrowth and -E.Border or E.Border
 
 			window.db.scale = 1
@@ -368,18 +368,21 @@ if AS:IsAddonLODorEnabled("Skada") then
 				window.bargroup.backdrop:SetFrameStrata("LOW")
 				window.bargroup.backdrop:SetFrameLevel(window.bargroup:GetFrameLevel() - 1)
 			end
-		else
+		elseif bgrame then
 			window.db.background.height = height - (window.db.enabletitle and window.db.barheight or -(E.Border + E.Spacing)) - (E.Border + E.Spacing)
 			window.db.enablebackground = true
 
 			window.bargroup:ClearAllPoints()
 			window.bargroup:SetPoint(point, relativeFrame, relativePoint, ofsx, window.db.reversegrowth and ofsy or -ofsy)
 
-			window.bargroup.bgframe:SetFrameStrata("LOW")
-			window.bargroup.bgframe:SetFrameLevel(window.bargroup:GetFrameLevel() - 1)
+			bgrame:SetFrameStrata("LOW")
+			bgrame:SetFrameLevel(window.bargroup:GetFrameLevel() - 1)
 		end
 
-		barmod.ApplySettings(barmod, window)
+		local barmod = Skada.displays[window.db.display]
+		if barmod and barmod.ApplySettings then
+			barmod.ApplySettings(barmod, window)
+		end
 
 		if Skada.revisited then
 			window:Toggle()
@@ -389,8 +392,12 @@ if AS:IsAddonLODorEnabled("Skada") then
 	function EMB:EmbedSkada()
 		wipe(self.skadaWindows)
 		for _, window in ipairs(Skada:GetWindows()) do
-			tinsert(self.skadaWindows, window)
+			if window.db.display == "bar" or window.db.display == "legacy" then
+				tinsert(self.skadaWindows, window)
+			end
 		end
+
+		if #self.skadaWindows == 0 then return end
 
 		local db = E.db.addOnSkins.embed
 		local numberToEmbed = 0

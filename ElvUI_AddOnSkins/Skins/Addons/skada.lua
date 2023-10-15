@@ -11,18 +11,24 @@ S:AddCallbackForAddon("Skada", "Skada", function()
 	if not E.private.addOnSkins.Skada then return end
 
 	if Skada.revisited then
-		hooksecurefunc(Skada.displays.bar, "AddDisplayOptions", function(_, _, options)
+		local function AddDisplayOptions(_, _, options)
 			options.windowoptions = nil
 			options.titleoptions.args.texture = nil
 			options.titleoptions.args.bordertexture = nil
 			options.titleoptions.args.thickness = nil
 			options.titleoptions.args.margin = nil
 			options.titleoptions.args.color = nil
-		end)
+		end
+		if Skada.displays.bar then
+			hooksecurefunc(Skada.displays.bar, "AddDisplayOptions", AddDisplayOptions)
+		end
+		if Skada.displays.legacy then
+			hooksecurefunc(Skada.displays.legacy, "AddDisplayOptions", AddDisplayOptions)
+		end
 		AS:SkinLibrary("LibUIDropDownMenu")
 	end
 
-	hooksecurefunc(Skada.displays["bar"], "ApplySettings", function(_, win)
+	local function ApplySettings(_, win)
 		local skada = win.bargroup
 
 		if win.db.enabletitle then
@@ -42,7 +48,8 @@ S:AddCallbackForAddon("Skada", "Skada", function()
 			end
 		end
 
-		if Skada.revisited then
+		local bgrame = skada.bgframe
+		if Skada.revisited and not bgrame then
 			skada:SetBackdrop(nil) -- remove default backdrop
 
 			if not skada.backdrop then
@@ -50,23 +57,30 @@ S:AddCallbackForAddon("Skada", "Skada", function()
 			else
 				skada.backdrop:SetTemplate(E.db.addOnSkins.skadaTemplate, E.db.addOnSkins.skadaTemplate == "Default" and E.db.addOnSkins.skadaTemplateGloss or false)
 			end
-		elseif win.db.enablebackground then
-			skada.bgframe:SetTemplate(E.db.addOnSkins.skadaTemplate, E.db.addOnSkins.skadaTemplate == "Default" and E.db.addOnSkins.skadaTemplateGloss or false)
+		elseif bgframe and win.db.enablebackground then
+			bgrame:SetTemplate(E.db.addOnSkins.skadaTemplate, E.db.addOnSkins.skadaTemplate == "Default" and E.db.addOnSkins.skadaTemplateGloss or false)
 
-			if skada.bgframe then
-				skada.bgframe:ClearAllPoints()
+			if bgrame then
+				bgrame:ClearAllPoints()
 				if win.db.reversegrowth then
-					skada.bgframe:SetPoint("LEFT", skada.button, "LEFT", -E.Border, 0)
-					skada.bgframe:SetPoint("RIGHT", skada.button, "RIGHT", E.Border, 0)
-					skada.bgframe:SetPoint("BOTTOM", skada.button, "TOP", 0, win.db.enabletitle and E.Spacing or -win.db.barheight - E.Border)
+					bgrame:SetPoint("LEFT", skada.button, "LEFT", -E.Border, 0)
+					bgrame:SetPoint("RIGHT", skada.button, "RIGHT", E.Border, 0)
+					bgrame:SetPoint("BOTTOM", skada.button, "TOP", 0, win.db.enabletitle and E.Spacing or -win.db.barheight - E.Border)
 				else
-					skada.bgframe:SetPoint("LEFT", skada.button, "LEFT", -E.Border, 0)
-					skada.bgframe:SetPoint("RIGHT", skada.button, "RIGHT", E.Border, 0)
-					skada.bgframe:SetPoint("TOP", skada.button, "BOTTOM", 0, win.db.enabletitle and -E.Spacing or win.db.barheight + E.Border)
+					bgrame:SetPoint("LEFT", skada.button, "LEFT", -E.Border, 0)
+					bgrame:SetPoint("RIGHT", skada.button, "RIGHT", E.Border, 0)
+					bgrame:SetPoint("TOP", skada.button, "BOTTOM", 0, win.db.enabletitle and -E.Spacing or win.db.barheight + E.Border)
 				end
 			end
 		end
-	end)
+	end
+
+	if Skada.displays.bar then
+		hooksecurefunc(Skada.displays.bar, "ApplySettings", ApplySettings)
+	end
+	if Skada.displays.legacy then
+		hooksecurefunc(Skada.displays.legacy, "ApplySettings", ApplySettings)
+	end
 
 	local EMB = E:GetModule("EmbedSystem")
 	hooksecurefunc(Skada, "CreateWindow", function()
